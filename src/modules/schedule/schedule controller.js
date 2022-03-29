@@ -6,27 +6,39 @@ module.exports = {
     try {
       let { page, limit } = request.query;
       page = Number(page);
+      if (page === 0) {
+        page = 1;
+      }
       limit = Number(limit);
+      if (limit === 0) {
+        limit = 100;
+      }
       const offset = page * limit - limit;
       const totalData = await scheduleModel.getCountSchedule();
       const totalPage = Math.ceil(totalData / limit);
 
       let { searchLocation } = request.query;
-      if (searchLocation.length <= 1) {
+      const { searchMovieId } = request.query;
+      if (searchMovieId.length < 1 && searchLocation.length === 0) {
+        searchLocation = "";
+      }
+      if (searchLocation.length === 0 && searchMovieId.length >= 1) {
         searchLocation = 0;
       }
-      let { searchMovieId } = request.query;
-      if (searchMovieId < 1) {
-        searchMovieId = null;
+      console.log(searchMovieId);
+      let { sort } = request.query;
+      if (sort === "movieId DESC") {
+        sort = "movieId DESC";
+      } else {
+        sort = "movieId ASC";
       }
-      const { movieId } = request.query;
 
       const result = await scheduleModel.getAllSchedule(
         limit,
         offset,
         searchLocation,
         searchMovieId,
-        movieId
+        sort
       );
       const datafound = result.length;
       const pageinfo = {
@@ -121,8 +133,6 @@ module.exports = {
       };
       // eslint-disable-next-line no-restricted-syntax
       for (const data in setData) {
-        // console.log(data); // property
-        // console.log(setData[data]); // value
         if (!setData[data]) {
           delete setData[data];
         }
@@ -130,8 +140,6 @@ module.exports = {
 
       const result = await scheduleModel.updateSchedule(id, setData);
 
-      //   response.status(200);
-      //   response.send("hello world");
       return helperWrapper.response(response, 200, "succes get data", result);
     } catch (error) {
       return helperWrapper.response(response, 400, "Bad Request", null);
@@ -149,9 +157,12 @@ module.exports = {
           null
         );
       }
-      //   response.status(200);
-      //   response.send("hello world");
-      return helperWrapper.response(response, 200, "succes get data", result);
+      return helperWrapper.response(
+        response,
+        200,
+        "succes delete data",
+        result
+      );
     } catch (error) {
       return helperWrapper.response(response, 400, "Bad Request", null);
     }

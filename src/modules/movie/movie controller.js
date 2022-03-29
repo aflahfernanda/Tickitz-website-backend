@@ -6,24 +6,32 @@ module.exports = {
     try {
       let { page, limit } = request.query;
       page = Number(page);
+      if (page === 0) {
+        page = 1;
+      }
       limit = Number(limit);
+      if (limit === 0) {
+        limit = 10;
+      }
       const offset = page * limit - limit;
       const totalData = await movieModel.getCountMovie();
       const totalPage = Math.ceil(totalData / limit);
-      if (page.length === undefined) {
-        page = 1;
-      }
 
       let { searchName } = request.query;
       if (searchName.length === undefined) {
         searchName = null;
       }
-      const { name } = request.query;
+      let { sort } = request.query;
+      if (sort === "name DESC") {
+        sort = "name DESC";
+      } else {
+        sort = "name ASC";
+      }
       const result = await movieModel.getAllMovie(
         limit,
         offset,
         searchName,
-        name
+        sort
       );
       const datafound = result.length;
       const pageinfo = {

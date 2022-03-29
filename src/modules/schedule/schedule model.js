@@ -14,10 +14,10 @@ module.exports = {
         }
       );
     }),
-  getAllSchedule: (limit, offset, searchLocation, searchMovieId) =>
+  getAllSchedule: (limit, offset, searchLocation, searchMovieId, sort) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT schedule.id,movie.name,movie.category,movie.synopsis,schedule.movieId,schedule.premiere,schedule.price,schedule.location,schedule.dateStart,schedule.dateEnd,schedule.time FROM schedule JOIN movie ON movie.id=schedule.movieId WHERE location LIKE '%${searchLocation}%' OR movieId LIKE '${searchMovieId}' ORDER BY movieId LIMIT ? OFFSET ?`,
+        `SELECT schedule.id,schedule.movieId,schedule.premiere,schedule.price,schedule.location,schedule.dateStart,schedule.dateEnd,schedule.time,schedule.createdAt,schedule.updatedAt,movie.name,movie.category,movie.cast,movie.releaseDate,movie.duration,movie.synopsis FROM schedule JOIN movie ON movie.id=schedule.movieId WHERE location LIKE '%${searchLocation}%' OR movieId = '${searchMovieId}' ORDER BY ${sort} LIMIT ? OFFSET ?`,
         [limit, offset],
         (error, result) => {
           if (!error) {
@@ -79,11 +79,15 @@ module.exports = {
         }
       );
     }),
-  deleteMovie: (id) =>
+  deleteSchedule: (id, data) =>
     new Promise((resolve, reject) => {
-      connection.query("DELETE FROM movie WHERE id=?", id, (error, result) => {
+      connection.query("DELETE FROM schedule WHERE id=?", id, (error) => {
         if (!error) {
-          resolve(result);
+          const newResult = {
+            id,
+            ...data,
+          };
+          resolve(newResult);
         } else {
           reject(new Error(error.sqlMessage));
         }

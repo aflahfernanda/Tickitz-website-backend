@@ -15,10 +15,10 @@ module.exports = {
       );
     }),
 
-  getAllMovie: (limit, offset, searchName) =>
+  getAllMovie: (limit, offset, searchName, sort) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT * FROM movie WHERE name LIKE '%${searchName}%' ORDER BY name LIMIT ? OFFSET ?`,
+        `SELECT * FROM movie WHERE name LIKE '%${searchName}%' ORDER BY ${sort} LIMIT ? OFFSET ?`,
         [limit, offset],
         (error, result) => {
           if (!error) {
@@ -76,11 +76,15 @@ module.exports = {
         }
       });
     }),
-  deleteMovie: (id) =>
+  deleteMovie: (id, data) =>
     new Promise((resolve, reject) => {
-      connection.query("DELETE FROM movie WHERE id=?", id, (error, result) => {
+      connection.query("DELETE FROM movie WHERE id=?", id, (error) => {
         if (!error) {
-          resolve(result);
+          const newResult = {
+            id,
+            ...data,
+          };
+          resolve(newResult);
         } else {
           reject(new Error(error.sqlMessage));
         }
