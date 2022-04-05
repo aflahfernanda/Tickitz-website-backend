@@ -65,10 +65,10 @@ module.exports = {
         }
       );
     }),
-  getDashboardBooking: () =>
+  getDashboardBooking: (premiere, movieId, location) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT MONTH(dateBooking) AS month, SUM(totalPayment) AS total FROM booking JOIN schedule ON booking.scheduleId=schedule.movieId GROUP BY MONTH(dateBooking);`,
+        `SELECT Id FROM booking JOIN schedule ON scheduleId.booking = schedule.id WHERE premiere='${premiere}' movieId=${movieId} location='${location}'`,
         (error, result) => {
           if (!error) {
             resolve(result);
@@ -115,6 +115,19 @@ module.exports = {
               ...data,
             };
             resolve(newResult);
+          } else {
+            reject(new Error(error.sqlMessage));
+          }
+        }
+      );
+    }),
+  getBookingByUserId: (userId) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `SELECT user.firstName,user.lastName,user.email,booking.userId,booking.id,booking.id,booking.scheduleId,booking.dateBooking,booking.timeBooking,booking.totalTicket,booking.totalPayment,booking.paymentMethod,booking.statusPayment,booking.statusUsed,booking.createdAt,booking.updateAt,schedule.movieId ,movie.name,movie.category FROM user JOIN booking ON user.id = booking.userId JOIN schedule ON booking.scheduleId=schedule.id JOIN movie ON schedule.movieId=movie.id WHERE userId=${userId}  `,
+        (error, result) => {
+          if (!error) {
+            resolve(result);
           } else {
             reject(new Error(error.sqlMessage));
           }

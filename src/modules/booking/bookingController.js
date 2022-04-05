@@ -1,10 +1,11 @@
-const helperWrapper = require("../../hepler/wrapper");
-const bookingModel = require("./booking model");
+const helperWrapper = require("../../helper/wrapper");
+const bookingModel = require("./bookingModel");
 
 module.exports = {
   createBooking: async (request, response) => {
     try {
       const {
+        userId,
         scheduleId,
         dateBooking,
         timeBooking,
@@ -24,6 +25,7 @@ module.exports = {
       totalTicket = seat.length;
       const setData = [
         {
+          userId,
           scheduleId,
           dateBooking,
           timeBooking,
@@ -64,11 +66,11 @@ module.exports = {
     try {
       const { id } = request.params;
       await bookingModel.getDashboardBooking(id);
-      const { scheduleId, dateBooking, timeBooking } = request.query;
-      const result = await bookingModel.getSeatBooking(
-        scheduleId,
-        dateBooking,
-        timeBooking
+      const { premiere, movieId, location } = request.query;
+      const result = await bookingModel.getDashboardBooking(
+        premiere,
+        movieId,
+        location
       );
       return helperWrapper.response(response, 200, "succes get data", result);
     } catch (error) {
@@ -136,6 +138,31 @@ module.exports = {
       //   response.status(200);
       //   response.send("hello world");
       return helperWrapper.response(response, 200, "succes get data", result);
+    } catch (error) {
+      console.log(error);
+      return helperWrapper.response(response, 400, "Bad Request", null);
+    }
+  },
+  getBookingByUserId: async (request, response) => {
+    try {
+      const { userId } = request.params;
+      const result = await bookingModel.getBookingByUserId(userId);
+      if (result.length <= 0) {
+        return helperWrapper.response(
+          response,
+          404,
+          `Data by userId ${userId} not found`,
+          null
+        );
+      }
+      const seatResult = await bookingModel.getBookingByIdBookingSeat(userId);
+      const newResult = { ...result, seatResult };
+      return helperWrapper.response(
+        response,
+        200,
+        "succes get data",
+        newResult
+      );
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);

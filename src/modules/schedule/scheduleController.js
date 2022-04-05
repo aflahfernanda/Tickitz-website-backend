@@ -1,46 +1,60 @@
-const helperWrapper = require("../../hepler/wrapper");
-const movieModel = require("./movie model");
+const helperWrapper = require("../../helper/wrapper");
+const scheduleModel = require("./scheduleModel");
+const redis = require("../../config/redis");
 
 module.exports = {
-  getAllMovie: async (request, response) => {
+  getAllSchedule: async (request, response) => {
     try {
-      let { page, limit } = request.query;
+      let { page, limit, searchLocation, searchMovieId, sort } = request.query;
+      //page and limit search process
       page = Number(page);
-      if (page === 0) {
+      if (!page) {
         page = 1;
       }
       limit = Number(limit);
-      if (limit === 0) {
-        limit = 10;
+      if (!limit) {
+        limit = 100;
       }
       const offset = page * limit - limit;
-      const totalData = await movieModel.getCountMovie();
+      const totalData = await scheduleModel.getCountSchedule();
       const totalPage = Math.ceil(totalData / limit);
 
-      let { searchName } = request.query;
-      if (searchName.length === undefined) {
-        searchName = null;
+      //search location validation
+      if (searchMovieId.length < 1 && searchLocation.length === 0) {
+        searchLocation = "";
       }
-      let { sort } = request.query;
-      if (sort === "name DESC") {
-        sort = "name DESC";
+      //search movie id validation
+      if (searchLocation.length === 0 && searchMovieId.length >= 1) {
+        searchLocation = 0;
+      }
+
+      //sorting process
+      if (sort === "movieId DESC") {
+        sort = "movieId DESC";
       } else {
-        sort = "name ASC";
+        sort = "movieId ASC";
       }
-      const result = await movieModel.getAllMovie(
+
+      const result = await scheduleModel.getAllSchedule(
         limit,
         offset,
-        searchName,
+        searchLocation,
+        searchMovieId,
         sort
       );
-      const datafound = result.length;
+      const dataSearchFound = result.length;
       const pageinfo = {
-        datafound,
+        dataSearchFound,
         page,
         totalPage,
         limit,
         totalData,
       };
+
+      //save data to redis
+      redis.setEx(`getSchedule`, 3600, JSON.stringify(result));
+
+      //result
       return helperWrapper.response(
         response,
         200,
@@ -49,13 +63,14 @@ module.exports = {
         pageinfo
       );
     } catch (error) {
+      console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
-  getMovieById: async (request, response) => {
+  getScheduleById: async (request, response) => {
     try {
       const { id } = request.params;
-      const result = await movieModel.getMovieById(id);
+      const result = await scheduleModel.getScheduleById(id);
       if (result.length <= 0) {
         return helperWrapper.response(
           response,
@@ -64,32 +79,30 @@ module.exports = {
           null
         );
       }
+
+      //save data to redis
+      redis.setEx(`getScheduleId:${id}`, 3600, JSON.stringify(result));
+
       return helperWrapper.response(response, 200, "succes get data", result);
     } catch (error) {
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
-  createMovie: async (request, response) => {
+  createSchedule: async (request, response) => {
     try {
-      const {
-        name,
-        category,
-        synopsis,
-        releaseDate,
-        cast,
-        director,
-        duration,
-      } = request.body;
+      const { movieId, premiere, price, location, dateStart, dateEnd, time } =
+        request.body;
       const setData = {
-        name,
-        category,
-        synopsis,
-        releaseDate,
-        cast,
-        director,
-        duration,
+        movieId,
+        premiere,
+        price,
+        location,
+        dateStart,
+        dateEnd,
+        time,
       };
-      const result = await movieModel.createMovie(setData);
+      const result = await scheduleModel.createSchedule(setData);
+
       return helperWrapper.response(
         response,
         200,
@@ -100,10 +113,10 @@ module.exports = {
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
-  updateMovie: async (request, response) => {
+  updateSchedule: async (request, response) => {
     try {
       const { id } = request.params;
-      const checkResult = await movieModel.getMovieById(id);
+      const checkResult = await scheduleModel.getScheduleById(id);
       if (checkResult.length <= 0) {
         return helperWrapper.response(
           response,
@@ -112,23 +125,16 @@ module.exports = {
           null
         );
       }
-      const {
-        name,
-        category,
-        synopsis,
-        releaseDate,
-        cast,
-        director,
-        duration,
-      } = request.body;
+      const { movieId, premiere, price, location, dateStart, dateEnd, time } =
+        request.body;
       const setData = {
-        name,
-        category,
-        synopsis,
-        releaseDate,
-        cast,
-        director,
-        duration,
+        movieId,
+        premiere,
+        price,
+        location,
+        dateStart,
+        dateEnd,
+        time,
         updatedAt: new Date(Date.now()),
       };
       // eslint-disable-next-line no-restricted-syntax
@@ -138,19 +144,17 @@ module.exports = {
         }
       }
 
-      const result = await movieModel.updateMovie(id, setData);
+      const result = await scheduleModel.updateSchedule(id, setData);
 
-      //   response.status(200);
-      //   response.send("hello world");
       return helperWrapper.response(response, 200, "succes get data", result);
     } catch (error) {
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
-  deleteMovie: async (request, response) => {
+  deleteSchedule: async (request, response) => {
     try {
       const { id } = request.params;
-      const result = await movieModel.deleteMovie(id);
+      const result = await scheduleModel.deleteSchedule(id);
       if (result.length <= 0) {
         return helperWrapper.response(
           response,
@@ -159,8 +163,6 @@ module.exports = {
           null
         );
       }
-      //   response.status(200);
-      //   response.send("hello world");
       return helperWrapper.response(
         response,
         200,

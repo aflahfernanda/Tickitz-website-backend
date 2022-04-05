@@ -15,10 +15,10 @@ module.exports = {
       );
     }),
 
-  getAllMovie: (limit, offset, searchName, sort) =>
+  getAllMovie: (limit, offset, searchName, sort, searchRelease) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT * FROM movie WHERE name LIKE '%${searchName}%' ORDER BY ${sort} LIMIT ? OFFSET ?`,
+        `SELECT * FROM movie WHERE name LIKE '%${searchName}%' OR releaseDate LIKE '%${searchRelease}%' ORDER BY ${sort} LIMIT ? OFFSET ?`,
         [limit, offset],
         (error, result) => {
           if (!error) {
