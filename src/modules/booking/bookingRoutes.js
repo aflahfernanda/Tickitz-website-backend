@@ -20,7 +20,11 @@ Router.get(
   middlewareAuth.isAdminAuthentication,
   bookingController.getBookingByUserId
 );
-Router.get("/userId/:scheduleId", bookingController.getBookingByIdBooking);
+Router.get(
+  "/userId/:scheduleId",
+  middlewareAuth.userAuthentication,
+  bookingController.getBookingByIdBooking
+);
 Router.get(
   "/schedule",
   middlewareAuth.isAdminAuthentication,

@@ -102,7 +102,8 @@ module.exports = {
           null
         );
       }
-      if (email !== "admin@gmail.com") {
+      // // validasi ROLE
+      if (checkUser[0].role !== "ADMIN") {
         let { password } = request.body;
         const checkPassword = await authModel.getUserByPassword(email);
         const stringPass = checkPassword[0].password;
@@ -122,7 +123,7 @@ module.exports = {
           token,
         });
       }
-      if (email == "admin@gmail.com") {
+      if (checkUser[0].role == "ADMIN") {
         let { password } = request.body;
         const checkPassword = await authModel.getUserByPassword(email);
         const stringPass = checkPassword[0].password;
