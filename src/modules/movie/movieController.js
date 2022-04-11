@@ -21,19 +21,12 @@ module.exports = {
       const totalPage = Math.ceil(totalData / limit);
 
       //search name release validation
-      if (searchName.length < 1 && searchRelease.length > 0) {
-        searchName = "*";
-      }
-
-      //search name validation
-      if (searchRelease.length === 0 && searchName.length >= 1) {
-        searchRelease = "*";
+      if (!searchName) {
+        searchName = "";
       }
 
       //sorting process and validation
-      if (sort === "name DESC") {
-        sort = "name DESC";
-      } else {
+      if (!sort) {
         sort = "name ASC";
       }
       const result = await movieModel.getAllMovie(
