@@ -1,0 +1,1 @@
+UPDATE booking SET statusUsed='accept' ,paymentMethod='bca_klickplay' ,statusPayment='settlement', updateAt='2022-11-04' WHERE id='2d4f0b17-7f4c-4684-9257-1fe4bccdc074'

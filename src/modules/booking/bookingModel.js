@@ -134,4 +134,18 @@ module.exports = {
         }
       );
     }),
+  midtrans: (transaction_status, order_id, transaction_time) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `INSERT into booking SET paymentMethod='${transaction_status}' ,statusPayment='${transaction_status}' ,updateAt='${transaction_time}' WHERE id='${order_id}'
+        `,
+        (error, result) => {
+          if (!error) {
+            resolve(result);
+          } else {
+            reject(new Error(error.sqlMessage));
+          }
+        }
+      );
+    }),
 };

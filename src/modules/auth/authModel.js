@@ -29,10 +29,10 @@ module.exports = {
         }
       );
     }),
-  getActivation: (id) =>
+  getActivation: (email) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `UPDATE user SET status= 'active' WHERE id="${id}"`,
+        `UPDATE user SET status= 'active' WHERE email="${email}"`,
         (error, result) => {
           if (!error) {
             const newResult = "email active";

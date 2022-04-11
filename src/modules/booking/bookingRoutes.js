@@ -4,6 +4,7 @@ const Router = express.Router();
 
 const bookingController = require("./bookingController");
 const middlewareAuth = require("../../middleware/auth");
+const { postMidtransNotification } = require("./bookingController");
 
 Router.get(
   "/",
@@ -34,6 +35,11 @@ Router.patch(
   "/:scheduleId",
   middlewareAuth.isAdminAuthentication,
   bookingController.updateStatusBooking
+);
+Router.post(
+  "/midtrans-notification",
+  middlewareAuth.userAuthentication,
+  bookingController.postMidtransNotification
 );
 
 module.exports = Router;

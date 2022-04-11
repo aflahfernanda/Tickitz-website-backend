@@ -29,7 +29,7 @@ module.exports = {
   updateImage: (id, data) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `UPDATE user SET ? WHERE id=${id}`,
+        `UPDATE user SET ? WHERE id="${id}"`,
         data,
         (error, result) => {
           if (!error) {

@@ -1,10 +1,12 @@
 const helperWrapper = require("../../helper/wrapper");
 const bookingModel = require("./bookingModel");
+const { v4: uuidv4 } = require("uuid");
+const helperMidtrans = require("../../helper/midtrans");
 
 module.exports = {
   createBooking: async (request, response) => {
     try {
-      const {
+      let {
         userId,
         scheduleId,
         dateBooking,
@@ -23,8 +25,16 @@ module.exports = {
 
       let totalTicket = request.body;
       totalTicket = seat.length;
+      totalPayment = totalTicket * 50000;
+
+      // return helperWrapper.response(response, 200, "Success post data !", {
+      //   id: 1,
+      //   ...request.body,
+      //   redirectUrl: resultMidtrans.redirect_url,
+      // });
       const setData = [
         {
+          id: uuidv4(),
           userId,
           scheduleId,
           dateBooking,
@@ -36,13 +46,95 @@ module.exports = {
         },
         { bookingId, seat },
       ];
+      const setDataMidtrans = {
+        id: setData[0].id,
+        total: setData[0].totalPayment,
+      };
+      const resultMidtrans = await helperMidtrans.post(setDataMidtrans);
       const result = await bookingModel.createBooking(setData);
       return helperWrapper.response(
         response,
         200,
         "succes create data",
-        result
+        result,
+        resultMidtrans.redirect_url
       );
+    } catch (error) {
+      console.log(error);
+      return helperWrapper.response(response, 400, "Bad Request", null);
+    }
+  },
+  postMidtransNotification: async (request, response) => {
+    try {
+      // console.log(request.body);
+      // const result = await helperMidtrans.notif(request.body);
+      // const orderId = result.order_id;
+      // const transactionStatus = result.transaction_status;
+      // const fraudStatus = result.fraud_status;
+      // const updated = result.transaction_time;
+      const result = await helperMidtrans.notif(request.body);
+      const fraudStatus = result.fraud_status;
+      const transactionStatus = result.transaction_status;
+      let { transaction_status, transaction_time, order_id } = request.body;
+
+      // Sample transactionStatus handling logic
+
+      if (transactionStatus == "capture") {
+        // capture only applies to card transaction, which you need to check for the fraudStatus
+        if (fraudStatus == "challenge") {
+          const setData = {
+            transaction_status,
+            transaction_time,
+            order_id,
+          };
+          const result = await bookingModel.midtrans(setData);
+          return helperWrapper.response(
+            response,
+            200,
+            "succes create data",
+            result
+          );
+        } else if (fraudStatus == "accept") {
+          const setData = {
+            transaction_status,
+            transaction_time,
+            order_id,
+          };
+          const result = await bookingModel.midtrans(setData);
+          return helperWrapper.response(
+            response,
+            200,
+            "succes create data",
+            result
+          );
+        }
+      } else if (transactionStatus == "settlement") {
+        const setData = {
+          transaction_status,
+          transaction_time,
+          order_id,
+        };
+        const result = await bookingModel.midtrans(setData);
+        return helperWrapper.response(
+          response,
+          200,
+          "succes create data",
+          result
+        );
+      } else if (transactionStatus == "deny") {
+        // TODO you can ignore 'deny', because most of the time it allows payment retries
+        // and later can become success
+        // UBAH STATUS PEMBAYARAN MENJADI FAILED
+      } else if (
+        transactionStatus == "cancel" ||
+        transactionStatus == "expire"
+      ) {
+        // TODO set transaction status on your databaase to 'failure'
+        // UBAH STATUS PEMBAYARAN MENJADI FAILED
+      } else if (transactionStatus == "pending") {
+        // TODO set transaction status on your databaase to 'pending' / waiting payment
+        // UBAH STATUS PEMBAYARAN MENJADI PENDING
+      }
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);

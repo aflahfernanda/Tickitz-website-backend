@@ -3,6 +3,7 @@ const userModel = require("./userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../../config/cloudinary");
+const { resolveConfig } = require("prettier");
 
 module.exports = {
   getUserByUserId: async (request, response) => {

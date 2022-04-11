@@ -3,6 +3,9 @@ const helperWrapper = require("../../helper/wrapper");
 const authModel = require("./authModel");
 const bcrypt = require("bcrypt");
 const req = require("express/lib/request");
+const { sendMail } = require("../../helper/mail");
+const redis = require("../../config/redis");
+const { v4: uuidv4 } = require("uuid");
 
 module.exports = {
   register: async (request, response) => {
@@ -17,6 +20,7 @@ module.exports = {
 
       const { firstName, lastName, noTelp, email } = request.body;
       const setData = {
+        id: uuidv4(),
         firstName,
         lastName,
         noTelp,
@@ -49,9 +53,27 @@ module.exports = {
           null
         );
       }
+      const setSendEmail = {
+        to: email,
+        subject: "Email Verification !",
+        name: firstName,
+        template: "verificationEmail.html",
+        buttonUrl:
+          "https://web.postman.co/workspace/My-Workspace~b27bc0ce-8cbc-461c-873f-4cebc5e42732/request/20137788-c80cc5c5-8273-4ab9-878a-6a4140d4d52f",
+      };
+      // const sendEmail = setSendEmail.buttonUrl;
+      // if (!setSendEmail.email) {
+      //   return helperWrapper.response(
+      //     response,
+      //     400,
+      //     "activate your account",
+      //     null
+      //   );
+      // }
+      await sendMail(setSendEmail);
       //activation code
       const result = await authModel.register(setData);
-      const dataId = result.id;
+      const dataId = result.email;
       return helperWrapper.response(
         response,
         200,
@@ -66,8 +88,8 @@ module.exports = {
   },
   activateEmail: async (request, response) => {
     try {
-      const { id } = request.params;
-      const result = await authModel.getActivation(id);
+      const { email } = request.body;
+      const result = await authModel.getActivation(email);
       console.log(result);
       return helperWrapper.response(
         response,
@@ -103,51 +125,96 @@ module.exports = {
         );
       }
       // // validasi ROLE
+
+      let { password } = request.body;
+      const checkPassword = await authModel.getUserByPassword(email);
+      const stringPass = checkPassword[0].password;
+      const validPass = await bcrypt.compare(password, stringPass);
+
+      //if wrong password
+      if (!validPass) {
+        return helperWrapper.response(response, 400, "wrong password", null);
+      }
+      // prosess jwt
+      const payload = checkUser[0];
+      delete payload.password;
+
+      //role validation
       if (checkUser[0].role !== "ADMIN") {
-        let { password } = request.body;
-        const checkPassword = await authModel.getUserByPassword(email);
-        const stringPass = checkPassword[0].password;
-        const validPass = await bcrypt.compare(password, stringPass);
-
-        //if wrong password
-        if (!validPass) {
-          return helperWrapper.response(response, 400, "wrong password", null);
-        }
-        // prosess jwt
-
-        const payload = checkUser[0];
-        delete payload.password;
-        const token = jwt.sign({ ...payload }, "RAHASIA", { expiresIn: "24h" });
+        const token = jwt.sign({ ...payload }, "RAHASIA", { expiresIn: "1h" });
+        const refreshToken = jwt.sign({ ...payload }, "RAHASIABARU", {
+          expiresIn: "24h",
+        });
         return helperWrapper.response(response, 200, "succes login to user", {
           id: payload.id,
           token,
+          refreshToken,
         });
       }
       if (checkUser[0].role == "ADMIN") {
-        let { password } = request.body;
-        const checkPassword = await authModel.getUserByPassword(email);
-        const stringPass = checkPassword[0].password;
-        const validPass = await bcrypt.compare(password, stringPass);
-
-        //if wrong password
-        if (!validPass) {
-          return helperWrapper.response(response, 400, "wrong password", null);
-        }
-
-        // prosess jwt
-
-        const payload = checkUser[0];
-        delete payload.password;
         const token = jwt.sign({ ...payload }, "SECRET", {
+          expiresIn: "24h",
+        });
+        const refreshToken = jwt.sign({ ...payload }, "SECRETBARU ", {
           expiresIn: "24h",
         });
         return helperWrapper.response(response, 200, "succes login to admin", {
           id: payload.id,
           token,
+          refreshToken,
         });
       }
     } catch (error) {
       console.log(error);
+      return helperWrapper.response(response, 400, "Bad Request", null);
+    }
+  },
+  refresh: async (request, response) => {
+    try {
+      console.log(request.body);
+      const { refreshToken } = request.body;
+      const checkToken = await redis.get(`refreshToken:${refreshToken}`);
+      if (checkToken) {
+        return helperWrapper.response(
+          response,
+          403,
+          "Your refresh token cannot be use",
+          null
+        );
+      }
+
+      jwt.verify(refreshToken, "RAHASIABARU", async (error, result) => {
+        delete result.iat;
+        delete result.exp;
+        const token = jwt.sign(result, "RAHASIA", { expiresIn: "1h" });
+        const newRefreshToken = jwt.sign(result, "RAHASIABARU", {
+          expiresIn: "24h",
+        });
+        await redis.setEx(
+          `refreshToken:${refreshToken}`,
+          3600 * 48,
+          refreshToken
+        );
+        console.log(result);
+        return helperWrapper.response(response, 200, "Success refresh token", {
+          id: result.id,
+          token,
+          refreshToken: newRefreshToken,
+        });
+      });
+    } catch (error) {
+      return helperWrapper.response(response, 400, "Bad Request", null);
+    }
+  },
+  logout: async (request, response) => {
+    try {
+      let token = request.headers.authorization;
+      const { refreshToken } = request.body;
+      token = token.split(" ")[1];
+      redis.setEx(`accessToken:${token}`, 3600 * 24, token);
+      redis.setEx(`refreshToken:${refreshToken}`, 3600 * 24, token);
+      return helperWrapper.response(response, 200, "Success logout", null);
+    } catch (error) {
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },

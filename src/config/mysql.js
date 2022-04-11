@@ -3,10 +3,10 @@ const mysql = require("mysql2");
 require("dotenv").config();
 
 const connection = mysql.createConnection({
-  host: process.env.host,
-  user: process.env.user,
-  password: process.env.password,
-  database: process.env.database,
+  host: "ec2-44-202-197-206.compute-1.amazonaws.com",
+  user: "fw6aflah",
+  password: "Psujy82!",
+  database: "fw6aflah_paytickz",
 });
 
 connection.connect((error) => {

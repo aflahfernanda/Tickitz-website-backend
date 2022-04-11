@@ -8,7 +8,9 @@ const bodyParser = require("body-parser");
 const routerNavigation = require("./routes/index");
 
 const app = express();
-const port = 3001;
+require("dotenv").config();
+
+const port = "3001";
 
 // midleware
 

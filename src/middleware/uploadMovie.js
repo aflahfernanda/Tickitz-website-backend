@@ -2,6 +2,7 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../config/cloudinary");
 const helperWrapper = require("../helper/wrapper");
+const movieController = require("../modules/movie/movieController");
 
 // JIKA MENYIMPAN DATA DI CLOUDINARY
 const storage = new CloudinaryStorage({
@@ -41,14 +42,14 @@ module.exports = handlingUpload;
 //   destination(req, file, cb) {
 //     cb(null, "public/uploads/movie");
 //   },
-//   filename(req, file, cb) {
-//     // console.log(file);
-//     // file = {
-//     //   fieldname: 'image',
-//     //   originalname: 'LogoFazztrack.png',
-//     //   encoding: '7bit',
-//     //   mimetype: 'image/png'
-//     // }
+// filename(req, file, cb) {
+//   console.log(file);
+//   file = {
+//     fieldname: 'image',
+//     originalname: 'LogoFazztrack.png',
+//     encoding: '7bit',
+//     mimetype: 'image/png'
+//   }
 //     cb(null, new Date().toISOString().replace(/:/g, "-") + file.originalname);
 //   },
 // });
