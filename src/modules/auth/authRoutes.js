@@ -8,6 +8,6 @@ Router.post("/register", authController.register);
 Router.post("/login", authController.login);
 Router.post("/refresh", authController.refresh);
 Router.post("/logout", authController.logout);
-Router.patch("/activate", authController.activateEmail);
+Router.get("/activate/:id", authController.activateEmail);
 
 module.exports = Router;

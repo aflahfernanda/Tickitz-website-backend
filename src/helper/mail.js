@@ -4,9 +4,11 @@ const fs = require("fs");
 const mustache = require("mustache");
 require("dotenv").config();
 
-const clientId = process.env.clientId;
-const clientSecret = process.env.clientSecret;
-const refreshToken = process.env.refreshToken;
+const clientId =
+  "669829376072-vul5lionc8p7fnbdmoudssf4um5uqscu.apps.googleusercontent.com";
+const clientSecret = "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";
+const refreshToken =
+  "1//04kE7aVs8Ily1CgYIARAAGAQSNwF-L9Irotucy1bIaB4MCK001WeiU4tnRVd-DGokrWR7rYimygiQfEKxYVwjUG29fZeBETsWRME";
 
 const { OAuth2 } = google.auth;
 const OAuth2Client = new OAuth2(clientId, clientSecret);

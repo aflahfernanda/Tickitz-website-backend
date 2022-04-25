@@ -38,7 +38,7 @@ module.exports = {
   getScheduleByIdRedis: async (request, response, next) => {
     try {
       const { id } = request.params;
-      let result = await redis.get(`getScheduleId:${id}`);
+      let result = await redis.get(`getSchedule:*`);
       if (result !== null) {
         // console.log("data ada di dalam redis");
         result = JSON.parse(result);
@@ -57,7 +57,7 @@ module.exports = {
   },
   clearScheduleRedis: async (request, response, next) => {
     try {
-      const keys = await redis.keys("getScheduleId:*");
+      const keys = await redis.keys("getSchedule:*");
       if (keys.length > 0) {
         keys.forEach(async (element) => {
           await redis.del(element);

@@ -58,8 +58,7 @@ module.exports = {
         subject: "Email Verification !",
         name: firstName,
         template: "verificationEmail.html",
-        buttonUrl:
-          "https://web.postman.co/workspace/My-Workspace~b27bc0ce-8cbc-461c-873f-4cebc5e42732/request/20137788-c80cc5c5-8273-4ab9-878a-6a4140d4d52f",
+        buttonUrl: `localhost:3001/auth/activate/${setData.id}`,
       };
       // const sendEmail = setSendEmail.buttonUrl;
       // if (!setSendEmail.email) {
@@ -88,8 +87,8 @@ module.exports = {
   },
   activateEmail: async (request, response) => {
     try {
-      const { email } = request.body;
-      const result = await authModel.getActivation(email);
+      const { id } = request.params;
+      const result = await authModel.getActivation(id);
       console.log(result);
       return helperWrapper.response(
         response,
@@ -138,32 +137,28 @@ module.exports = {
       // prosess jwt
       const payload = checkUser[0];
       delete payload.password;
-
+      let secretAccesToken = "";
+      let secretRefreshToken = "";
       //role validation
       if (checkUser[0].role !== "ADMIN") {
-        const token = jwt.sign({ ...payload }, "RAHASIA", { expiresIn: "1h" });
-        const refreshToken = jwt.sign({ ...payload }, "RAHASIABARU", {
-          expiresIn: "24h",
-        });
-        return helperWrapper.response(response, 200, "succes login to user", {
-          id: payload.id,
-          token,
-          refreshToken,
-        });
+        secretAccesToken = "RAHASIA";
+        secretRefreshToken = "RAHASIABARU";
       }
       if (checkUser[0].role == "ADMIN") {
-        const token = jwt.sign({ ...payload }, "SECRET", {
-          expiresIn: "24h",
-        });
-        const refreshToken = jwt.sign({ ...payload }, "SECRETBARU ", {
-          expiresIn: "24h",
-        });
-        return helperWrapper.response(response, 200, "succes login to admin", {
-          id: payload.id,
-          token,
-          refreshToken,
-        });
+        secretAccesToken = "SECRET";
+        secretRefreshToken = "SECRETBARU";
       }
+      const token = jwt.sign({ ...payload }, secretAccesToken, {
+        expiresIn: "1h",
+      });
+      const refreshToken = jwt.sign({ ...payload }, secretRefreshToken, {
+        expiresIn: "24h",
+      });
+      return helperWrapper.response(response, 200, "succes login to admin", {
+        id: payload.id,
+        token,
+        refreshToken,
+      });
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);

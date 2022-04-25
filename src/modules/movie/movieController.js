@@ -93,7 +93,9 @@ module.exports = {
         cast,
         director,
         duration,
-        image: request.file ? request.file.filename : "",
+        image: request.file
+          ? `${request.file.filename}.${request.file.mimetype.split("/")[1]}`
+          : "",
       };
 
       //maksimal limit size
@@ -125,12 +127,8 @@ module.exports = {
         );
       }
       //delete image from cloudinary
-      const deleteImage = checkResult[0].image;
+      const deleteImage = checkResult[0].image.split(".")[0];
 
-      //delete image from cloudinary
-      cloudinary.uploader.destroy(deleteImage, function (result) {
-        return result;
-      });
       const {
         name,
         category,
@@ -148,14 +146,17 @@ module.exports = {
         cast,
         director,
         duration,
-        image: request.file ? request.file.filename : "",
+        image: request.file
+          ? `${request.file.filename}.${request.file.mimetype.split("/")[1]}`
+          : "",
         updatedAt: new Date(Date.now()),
       };
 
-      //maksimal limit size
-      const maksData = request.file.size;
-      if (maksData > 50000) {
-        return helperWrapper.response(response, 400, "file too large", null);
+      //delete image from cloudinary
+      if (setData.image !== "") {
+        cloudinary.uploader.destroy(deleteImage, function (result) {
+          return result;
+        });
       }
       // eslint-disable-next-line no-restricted-syntax
       for (const data in setData) {
@@ -187,7 +188,7 @@ module.exports = {
           null
         );
       }
-      const deleteImage = resultId[0].image;
+      const deleteImage = resultId[0].image.split(".")[0];
 
       //delete image from cloudinary
       cloudinary.uploader.destroy(deleteImage, function (result) {

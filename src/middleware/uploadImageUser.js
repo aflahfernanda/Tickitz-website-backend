@@ -13,8 +13,24 @@ const storage = new CloudinaryStorage({
     folder: "Tickitz/user",
   },
 });
+//fungsi filefilter
 
-const upload = multer({ storage }).single("image");
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(new Error("only jpg,png,jpeg format allowed"));
+  }
+};
+const upload = multer({
+  storage,
+  limits: { fileSize: 1024 * 1024 * 1 },
+  fileFilter,
+}).single("image");
 
 const handlingUpload = (request, response, next) => {
   upload(request, response, (error) => {
