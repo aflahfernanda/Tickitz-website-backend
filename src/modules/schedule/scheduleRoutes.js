@@ -8,7 +8,7 @@ const middlewareAuth = require("../../middleware/auth");
 
 Router.get("/", scheduleController.getAllSchedule);
 Router.get(
-  "/:id",
+  "/:movieId",
   middlewareRedis.getScheduleByIdRedis,
   scheduleController.getScheduleById
 );

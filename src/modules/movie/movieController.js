@@ -17,7 +17,11 @@ module.exports = {
         limit = 100;
       }
       const offset = page * limit - limit;
-      const totalData = await movieModel.getCountMovie();
+      const totalData = await movieModel.getCountMovie(
+        searchName,
+        sort,
+        searchRelease
+      );
       const totalPage = Math.ceil(totalData / limit);
 
       //search name release validation
@@ -52,6 +56,7 @@ module.exports = {
         pageinfo
       );
     } catch (error) {
+      console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
@@ -97,12 +102,7 @@ module.exports = {
           ? `${request.file.filename}.${request.file.mimetype.split("/")[1]}`
           : "",
       };
-
-      //maksimal limit size
-      const maksData = request.file.size;
-      if (maksData > 50000) {
-        return helperWrapper.response(response, 400, "file too large", null);
-      }
+      console.log(setData);
       const result = await movieModel.createMovie(setData);
       return helperWrapper.response(
         response,
@@ -111,6 +111,7 @@ module.exports = {
         result
       );
     } catch (error) {
+      console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
@@ -126,8 +127,6 @@ module.exports = {
           null
         );
       }
-      //delete image from cloudinary
-      const deleteImage = checkResult[0].image.split(".")[0];
 
       const {
         name,
@@ -154,7 +153,7 @@ module.exports = {
 
       //delete image from cloudinary
       if (setData.image !== "") {
-        cloudinary.uploader.destroy(deleteImage, function (result) {
+        cloudinary.uploader.destroy(function (result) {
           return result;
         });
       }
@@ -164,13 +163,26 @@ module.exports = {
           delete setData[data];
         }
       }
+      // delete image from cloudinary condition
+      if (checkResult[0].image !== null) {
+        const deleteImage = checkResult[0].image.split(".")[0];
+        cloudinary.uploader.destroy(deleteImage, function (result) {
+          return result;
+        });
+      }
 
       const result = await movieModel.updateMovie(id, setData);
 
       //   response.status(200);
       //   response.send("hello world");
-      return helperWrapper.response(response, 200, "succes get data", result);
+      return helperWrapper.response(
+        response,
+        200,
+        "succes update data movie",
+        result
+      );
     } catch (error) {
+      console.log(error.response);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
@@ -191,7 +203,7 @@ module.exports = {
       const deleteImage = resultId[0].image.split(".")[0];
 
       //delete image from cloudinary
-      cloudinary.uploader.destroy(deleteImage, function (result) {
+      cloudinary.uploader.destroy(function (result) {
         return result;
       });
       return helperWrapper.response(

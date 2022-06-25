@@ -14,18 +14,15 @@ module.exports = {
         totalPayment,
         paymentMethod,
         statusPayment,
+        seat,
+        bookingId,
       } = request.body;
 
-      const { seat } = request.body;
-      let bookingId = request.body;
-      bookingId = scheduleId;
-      seat.forEach((element) => {
-        bookingModel.createBookingSeat(bookingId, element);
-      });
-
+      const price = await bookingModel.getScheduleById(scheduleId);
+      const dataPrice = price[0].price;
       let totalTicket = request.body;
       totalTicket = seat.length;
-      totalPayment = totalTicket * 50000;
+      totalPayment = totalTicket * dataPrice;
 
       // return helperWrapper.response(response, 200, "Success post data !", {
       //   id: 1,
@@ -44,14 +41,18 @@ module.exports = {
           paymentMethod,
           statusPayment,
         },
-        { bookingId, seat },
       ];
       const setDataMidtrans = {
         id: setData[0].id,
         total: setData[0].totalPayment,
       };
       const resultMidtrans = await helperMidtrans.post(setDataMidtrans);
+      console.log(resultMidtrans);
       const result = await bookingModel.createBooking(setData);
+      bookingId = result.id;
+      seat.forEach((element) => {
+        bookingModel.createBookingSeat(setData[0].id, element);
+      });
       return helperWrapper.response(
         response,
         200,
@@ -60,7 +61,6 @@ module.exports = {
         resultMidtrans.redirect_url
       );
     } catch (error) {
-      console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
@@ -136,18 +136,21 @@ module.exports = {
         // UBAH STATUS PEMBAYARAN MENJADI PENDING
       }
     } catch (error) {
-      console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
   getSeatBooking: async (request, response) => {
     try {
       const { scheduleId, dateBooking, timeBooking } = request.query;
+      if (!timeBooking) {
+        timeBooking = "0";
+      }
       const result = await bookingModel.getSeatBooking(
         scheduleId,
         dateBooking,
         timeBooking
       );
+
       return helperWrapper.response(response, 200, "succes get data", result);
     } catch (error) {
       console.log(error);
@@ -156,8 +159,8 @@ module.exports = {
   },
   getDashboardBooking: async (request, response) => {
     try {
-      const { id } = request.params;
-      await bookingModel.getDashboardBooking(id);
+      // const { id } = request.params;
+      // await bookingModel.getDashboardBooking(id);
       const { premiere, movieId, location } = request.query;
       const result = await bookingModel.getDashboardBooking(
         premiere,
@@ -172,19 +175,17 @@ module.exports = {
   },
   getBookingByIdBooking: async (request, response) => {
     try {
-      const { scheduleId } = request.params;
-      const result = await bookingModel.getBookingByIdBooking(scheduleId);
+      const { id } = request.params;
+      const result = await bookingModel.getBookingByIdBooking(id);
       if (result.length <= 0) {
         return helperWrapper.response(
           response,
           404,
-          `Data by id ${scheduleId} not found`,
+          `Data by id ${id} not found`,
           null
         );
       }
-      const seatResult = await bookingModel.getBookingByIdBookingSeat(
-        scheduleId
-      );
+      const seatResult = await bookingModel.getBookingByIdBookingSeat(id);
       const newResult = { ...result, seatResult };
       return helperWrapper.response(
         response,
@@ -199,13 +200,13 @@ module.exports = {
   },
   updateStatusBooking: async (request, response) => {
     try {
-      const { scheduleId } = request.params;
-      const checkResult = await bookingModel.getBookingByIdBooking(scheduleId);
+      const { id } = request.params;
+      const checkResult = await bookingModel.getBookingByIdBooking(id);
       if (checkResult.length <= 0) {
         return helperWrapper.response(
           response,
           404,
-          `Data by id ${scheduleId} not found`,
+          `Data by id ${id} not found`,
           null
         );
       }
@@ -222,14 +223,16 @@ module.exports = {
         }
       }
 
-      const result = await bookingModel.updateStatusBooking(
-        scheduleId,
-        setData
-      );
+      const result = await bookingModel.updateStatusBooking(id, setData);
 
       //   response.status(200);
       //   response.send("hello world");
-      return helperWrapper.response(response, 200, "succes get data", result);
+      return helperWrapper.response(
+        response,
+        200,
+        "succes update data",
+        result
+      );
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
@@ -237,8 +240,10 @@ module.exports = {
   },
   getBookingByUserId: async (request, response) => {
     try {
-      const { userId } = request.params;
-      const result = await bookingModel.getBookingByUserId(userId);
+      const { id } = request.params;
+      const result = await bookingModel.getBookingByUserId(id);
+      console.log(result);
+
       if (result.length <= 0) {
         return helperWrapper.response(
           response,
@@ -247,7 +252,7 @@ module.exports = {
           null
         );
       }
-      const seatResult = await bookingModel.getBookingByIdBookingSeat(userId);
+      const seatResult = await bookingModel.getBookingByIdBookingSeat(id);
       const newResult = { ...result, seatResult };
       return helperWrapper.response(
         response,

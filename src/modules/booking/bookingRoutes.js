@@ -6,36 +6,17 @@ const bookingController = require("./bookingController");
 const middlewareAuth = require("../../middleware/auth");
 const { postMidtransNotification } = require("./bookingController");
 
-Router.get(
-  "/",
-  middlewareAuth.userAuthentication,
-  bookingController.getSeatBooking
-);
+Router.get("/", bookingController.getSeatBooking);
+Router.get("/dashboard", bookingController.getDashboardBooking);
 Router.post(
   "/",
   middlewareAuth.userAuthentication,
   bookingController.createBooking
 );
-Router.get(
-  "/:userId",
-  middlewareAuth.isAdminAuthentication,
-  bookingController.getBookingByUserId
-);
-Router.get(
-  "/userId/:scheduleId",
-  middlewareAuth.userAuthentication,
-  bookingController.getBookingByIdBooking
-);
-Router.get(
-  "/schedule",
-  middlewareAuth.isAdminAuthentication,
-  bookingController.getDashboardBooking
-);
-Router.patch(
-  "/:scheduleId",
-  middlewareAuth.isAdminAuthentication,
-  bookingController.updateStatusBooking
-);
+Router.get("/:id", bookingController.getBookingByUserId);
+Router.get("/bookingId/:id", bookingController.getBookingByIdBooking);
+
+Router.patch("/:id", bookingController.updateStatusBooking);
 Router.post(
   "/midtrans-notification",
   middlewareAuth.userAuthentication,

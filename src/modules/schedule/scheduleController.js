@@ -5,7 +5,8 @@ const redis = require("../../config/redis");
 module.exports = {
   getAllSchedule: async (request, response) => {
     try {
-      let { page, limit, searchLocation, searchMovieId, sort } = request.query;
+      let { page, limit, searchLocation, searchMovieId, sort, searchDate } =
+        request.query;
       //page and limit search process
       page = Number(page);
       if (!page) {
@@ -16,22 +17,31 @@ module.exports = {
         limit = 100;
       }
       const offset = page * limit - limit;
-      const totalData = await scheduleModel.getCountSchedule();
+      const totalData = await scheduleModel.getCountSchedule(
+        searchDate,
+        searchLocation,
+        searchMovieId,
+        sort
+      );
       const totalPage = Math.ceil(totalData / limit);
 
-      //search location validation
-      if (searchMovieId.length < 1 && searchLocation.length === 0) {
-        searchLocation = "";
-      }
-      //search movie id validation
-      if (searchLocation.length === 0 && searchMovieId.length >= 1) {
-        searchLocation = 0;
-      }
+      // //search location validation
+      // if (searchMovieId.length < 1 && searchLocation.length === 0) {
+      //   searchLocation = "";
+      // }
+      // //search movie id validation
+      // if (searchLocation.length === 0 && searchMovieId.length >= 1) {
+      //   searchLocation = 0;
+      // }
 
       //sorting process
-      if (sort === "movieId DESC") {
-        sort = "movieId DESC";
-      } else {
+      if (!searchLocation) {
+        searchLocation = "";
+      }
+      if (!searchMovieId) {
+        searchMovieId = 0;
+      }
+      if (!sort) {
         sort = "movieId ASC";
       }
 
@@ -40,7 +50,8 @@ module.exports = {
         offset,
         searchLocation,
         searchMovieId,
-        sort
+        sort,
+        searchDate
       );
       const dataSearchFound = result.length;
       const pageinfo = {
@@ -69,19 +80,19 @@ module.exports = {
   },
   getScheduleById: async (request, response) => {
     try {
-      const { id } = request.params;
-      const result = await scheduleModel.getScheduleById(id);
+      const { movieId } = request.params;
+      const result = await scheduleModel.getScheduleById(movieId);
       if (result.length <= 0) {
         return helperWrapper.response(
           response,
           404,
-          `Data by id ${id} not found`,
+          `Data by id ${movieId} not found`,
           null
         );
       }
 
       //save data to redis
-      redis.setEx(`getScheduleId:${id}`, 3600, JSON.stringify(result));
+      redis.setEx(`getScheduleId:${movieId}`, 3600, JSON.stringify(result));
 
       return helperWrapper.response(response, 200, "succes get data", result);
     } catch (error) {
@@ -110,21 +121,14 @@ module.exports = {
         result
       );
     } catch (error) {
+      console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
   updateSchedule: async (request, response) => {
     try {
       const { id } = request.params;
-      const checkResult = await scheduleModel.getScheduleById(id);
-      if (checkResult.length <= 0) {
-        return helperWrapper.response(
-          response,
-          404,
-          `Data by id ${id} not found`,
-          null
-        );
-      }
+      await scheduleModel.getScheduleById(id);
       const { movieId, premiere, price, location, dateStart, dateEnd, time } =
         request.body;
       const setData = {
@@ -146,8 +150,14 @@ module.exports = {
 
       const result = await scheduleModel.updateSchedule(id, setData);
 
-      return helperWrapper.response(response, 200, "succes get data", result);
+      return helperWrapper.response(
+        response,
+        200,
+        "succes update data",
+        result
+      );
     } catch (error) {
+      console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },

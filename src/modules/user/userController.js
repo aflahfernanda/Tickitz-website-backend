@@ -56,7 +56,12 @@ module.exports = {
 
       //   response.status(200);
       //   response.send("hello world");
-      return helperWrapper.response(response, 200, "succes get data", result);
+      return helperWrapper.response(
+        response,
+        200,
+        "succes update profile",
+        result
+      );
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
@@ -84,21 +89,27 @@ module.exports = {
         updatedAt: new Date(Date.now()),
       };
 
-      //delete image from cloudinary condition
-      if (setData.image !== "") {
-        cloudinary.uploader.destroy(deleteImage, function (result) {
-          return result;
-        });
-      }
       // eslint-disable-next-line no-restricted-syntax
       for (const data in setData) {
         if (!setData[data]) {
           delete setData[data];
         }
       }
+      // delete image from cloudinary condition
+      if (checkResult[0].image !== null) {
+        const deleteImage = checkResult[0].image.split(".")[0];
+        cloudinary.uploader.destroy(deleteImage, function (result) {
+          return result;
+        });
+      }
       const result = await userModel.updateImage(id, setData);
 
-      return helperWrapper.response(response, 200, "succes get data", result);
+      return helperWrapper.response(
+        response,
+        200,
+        "succes update image",
+        result
+      );
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
@@ -145,19 +156,23 @@ module.exports = {
 
       //   response.status(200);
       //   response.send("hello world");
-      return helperWrapper.response(response, 200, "succes get data", result);
+      return helperWrapper.response(
+        response,
+        200,
+        "succes update password",
+        result
+      );
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);
     }
   },
-  closeAccount: async (request, response) => {
+  deleteImage: async (request, response) => {
     try {
       //untuk menghapus bisa menggunakan cloudinary.upload.destroy
       const { id } = request.params;
       const resultId = await userModel.getUserByUserId(id);
-
-      const result = await userModel.closeAccount(id);
+      const result = await userModel.deleteImage(id);
       if (result.length <= 0) {
         return helperWrapper.response(
           response,
@@ -166,17 +181,18 @@ module.exports = {
           null
         );
       }
-      const deleteImage = resultId[0].image;
 
       //delete image from cloudinary
-      cloudinary.uploader.destroy(deleteImage, function (result) {
-        return result;
-      });
+      if (resultId[0].image !== null) {
+        const deleteImage = resultId[0].image.split(".")[0];
+        cloudinary.uploader.destroy(deleteImage, function (result) {
+          return result;
+        });
+      }
       return helperWrapper.response(
         response,
         200,
-        "youre acount now closed",
-        resultId,
+        "succes delete image",
         result
       );
     } catch (error) {

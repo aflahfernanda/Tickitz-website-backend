@@ -20,6 +20,34 @@ module.exports = {
       );
       console.log(query.sql);
     }),
+  getScheduleById: (id) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        "SELECT * FROM schedule WHERE id=?",
+        id,
+        (error, result) => {
+          if (!error) {
+            resolve(result);
+          } else {
+            reject(new Error(error.sqlMessage));
+          }
+        }
+      );
+    }),
+  getBookingById: (id) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        "SELECT * FROM booking WHERE id=?",
+        id,
+        (error, result) => {
+          if (!error) {
+            resolve(result);
+          } else {
+            reject(new Error(error.sqlMessage));
+          }
+        }
+      );
+    }),
   createTotalTicket: (totalTicket) =>
     new Promise((resolve, reject) => {
       const query = connection.query(
@@ -34,10 +62,10 @@ module.exports = {
       );
       console.log(query.sql);
     }),
-  createBookingSeat: (bookingId, seat) =>
+  createBookingSeat: (id, seat) =>
     new Promise((resolve, reject) => {
       const query = connection.query(
-        `INSERT into bookingseat(bookingId,seat) VALUES (${bookingId},'${seat}')`,
+        `INSERT into bookingseat(bookingId,seat) VALUES ('${id}','${seat}')`,
         (error, result) => {
           if (!error) {
             const newResult = {
@@ -55,11 +83,14 @@ module.exports = {
   getSeatBooking: (scheduleId, dateBooking, timeBooking) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT booking.scheduleId,booking.dateBooking,booking.timeBooking,bookingseat.seat FROM bookingseat JOIN booking ON bookingseat.bookingId=booking.scheduleId WHERE scheduleId = ${scheduleId} AND dateBooking ='${dateBooking}' AND timeBooking ='${timeBooking}'`,
+        `SELECT booking.scheduleId,booking.dateBooking,booking.timeBooking,bookingseat.seat FROM bookingseat JOIN booking ON bookingseat.bookingId=booking.id WHERE timeBooking LIKE '%${timeBooking}%' ${
+          scheduleId ? `AND scheduleId = ${scheduleId}` : ""
+        } ${dateBooking ? `AND dateBooking ='${dateBooking}'` : ""} `,
         (error, result) => {
           if (!error) {
             resolve(result);
           } else {
+            console.log(error);
             reject(new Error(error.sqlMessage));
           }
         }
@@ -68,7 +99,23 @@ module.exports = {
   getDashboardBooking: (premiere, movieId, location) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT Id FROM booking JOIN schedule ON scheduleId.booking = schedule.id WHERE premiere='${premiere}' movieId=${movieId} location='${location}'`,
+        `SELECT booking.id,booking.scheduleId,booking.userId,booking.userId,booking.dateBooking,booking.totalTicket,booking.timeBooking,booking.totalPayment,schedule.id,schedule.movieId,schedule.price,schedule.premiere,schedule.location FROM booking JOIN schedule ON booking.scheduleId = schedule.id WHERE schedule.location LIKE '%${location}%'${
+          premiere ? `AND schedule.premiere='${premiere}' ` : ""
+        } ${movieId ? `AND schedule.movieId=${movieId} ` : ""}`,
+        (error, result) => {
+          if (!error) {
+            resolve(result);
+          } else {
+            console.log(error);
+            reject(new Error(error.sqlMessage));
+          }
+        }
+      );
+    }),
+  getBookingByIdBooking: (id) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `SELECT booking.id,booking.scheduleId,booking.dateBooking,booking.timeBooking,booking.totalTicket,booking.totalPayment,booking.paymentMethod,booking.statusPayment,booking.statusUsed,booking.createdAt,booking.updateAt,schedule.movieId ,movie.name,movie.category FROM booking JOIN schedule ON booking.scheduleId=schedule.id JOIN movie ON schedule.movieId=movie.id WHERE booking.id='${id}'  `,
         (error, result) => {
           if (!error) {
             resolve(result);
@@ -78,10 +125,10 @@ module.exports = {
         }
       );
     }),
-  getBookingByIdBooking: (scheduleId) =>
+  getBookingByIdBookingSeat: (id) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT booking.id,booking.scheduleId,booking.dateBooking,booking.timeBooking,booking.totalTicket,booking.totalPayment,booking.paymentMethod,booking.statusPayment,booking.statusUsed,booking.createdAt,booking.updateAt,schedule.movieId ,movie.name,movie.category FROM booking JOIN schedule ON booking.scheduleId=schedule.id JOIN movie ON schedule.movieId=movie.id WHERE scheduleId=${scheduleId}  `,
+        `SELECT bookingseat.seat,booking.id FROM bookingseat JOIN booking ON bookingseat.bookingId=booking.id WHERE booking.userId='${id}' `,
         (error, result) => {
           if (!error) {
             resolve(result);
@@ -91,27 +138,14 @@ module.exports = {
         }
       );
     }),
-  getBookingByIdBookingSeat: (scheduleId) =>
+  updateStatusBooking: (id, data) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT bookingseat.seat FROM bookingseat JOIN booking ON bookingseat.bookingId=booking.scheduleId WHERE scheduleId=${scheduleId} `,
-        (error, result) => {
-          if (!error) {
-            resolve(result);
-          } else {
-            reject(new Error(error.sqlMessage));
-          }
-        }
-      );
-    }),
-  updateStatusBooking: (scheduleId, data) =>
-    new Promise((resolve, reject) => {
-      connection.query(
-        `UPDATE booking SET statusUsed='not active' WHERE scheduleId=${scheduleId}`,
+        `UPDATE booking SET statusUsed='not active' WHERE id='${id}'`,
         (error) => {
           if (!error) {
             const newResult = {
-              scheduleId,
+              id,
               ...data,
             };
             resolve(newResult);
@@ -121,10 +155,10 @@ module.exports = {
         }
       );
     }),
-  getBookingByUserId: (userId) =>
+  getBookingByUserId: (id) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT user.firstName,user.lastName,user.email,booking.userId,booking.id,booking.id,booking.scheduleId,booking.dateBooking,booking.timeBooking,booking.totalTicket,booking.totalPayment,booking.paymentMethod,booking.statusPayment,booking.statusUsed,booking.createdAt,booking.updateAt,schedule.movieId ,movie.name,movie.category FROM user JOIN booking ON user.id = booking.userId JOIN schedule ON booking.scheduleId=schedule.id JOIN movie ON schedule.movieId=movie.id WHERE userId=${userId}  `,
+        `SELECT user.id,user.firstName,user.lastName,user.email,booking.userId,booking.id,booking.id,booking.scheduleId,booking.dateBooking,booking.timeBooking,booking.totalTicket,booking.totalPayment,booking.paymentMethod,booking.statusPayment,booking.statusUsed,booking.createdAt,booking.updateAt,schedule.id,schedule.premiere,schedule.price,schedule.movieId,schedule.location,movie.id,movie.name,movie.category FROM user JOIN booking ON user.id = booking.userId JOIN schedule ON booking.scheduleId=schedule.id JOIN movie ON schedule.movieId=movie.id WHERE booking.userId='${id}'  `,
         (error, result) => {
           if (!error) {
             resolve(result);
@@ -137,8 +171,7 @@ module.exports = {
   midtrans: (transaction_status, order_id, transaction_time) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `INSERT into booking SET paymentMethod='${transaction_status}' ,statusPayment='${transaction_status}' ,updateAt='${transaction_time}' WHERE id='${order_id}'
-        `,
+        `INSERT into booking SET paymentMethod='${transaction_status}' ,statusPayment='${transaction_status}' WHERE id='${order_id}'`,
         (error, result) => {
           if (!error) {
             resolve(result);

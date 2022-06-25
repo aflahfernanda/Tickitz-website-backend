@@ -1,23 +1,35 @@
 const connection = require("../../config/mysql");
 
 module.exports = {
-  getCountSchedule: () =>
+  getCountSchedule: (searchDate, searchLocation, searchMovieId, sort) =>
     new Promise((resolve, reject) => {
       connection.query(
-        "SELECT COUNT (*) AS total FROM schedule",
+        `SELECT COUNT (*) AS total FROM schedule WHERE location LIKE '%${searchLocation}%' ${
+          searchDate ? ` AND DAY(dateStart) =${searchDate}` : ""
+        } AND movieId=${searchMovieId}`,
         (error, result) => {
           if (!error) {
             resolve(result[0].total);
           } else {
+            console.log(error);
             reject(new Error(error.sqlMessage));
           }
         }
       );
     }),
-  getAllSchedule: (limit, offset, searchLocation, searchMovieId, sort) =>
+  getAllSchedule: (
+    limit,
+    offset,
+    searchLocation,
+    searchMovieId,
+    sort,
+    searchDate
+  ) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT schedule.id,schedule.movieId,schedule.premiere,schedule.price,schedule.location,schedule.dateStart,schedule.dateEnd,schedule.time,schedule.createdAt,schedule.updatedAt,movie.name,movie.category,movie.cast,movie.releaseDate,movie.duration,movie.synopsis FROM schedule JOIN movie ON movie.id=schedule.movieId WHERE location LIKE '%${searchLocation}%' OR movieId = '${searchMovieId}' ORDER BY ${sort} LIMIT ? OFFSET ?`,
+        `SELECT schedule.id,schedule.movieId,schedule.premiere,schedule.price,schedule.location,schedule.dateStart,schedule.dateEnd,schedule.time,schedule.createdAt,schedule.updatedAt,movie.name,movie.category,movie.cast,movie.releaseDate,movie.duration,movie.synopsis FROM schedule JOIN movie ON movie.id=schedule.movieId WHERE location LIKE '%${searchLocation}%' ${
+          searchDate ? ` AND DAY(dateStart) =${searchDate}` : ""
+        } AND movieId = ${searchMovieId} ORDER BY ${sort} LIMIT ? OFFSET ?`,
         [limit, offset],
         (error, result) => {
           if (!error) {
@@ -28,11 +40,11 @@ module.exports = {
         }
       );
     }),
-  getScheduleById: (id) =>
+  getScheduleById: (movieId) =>
     new Promise((resolve, reject) => {
       connection.query(
         "SELECT * FROM schedule WHERE id=?",
-        id,
+        movieId,
         (error, result) => {
           if (!error) {
             resolve(result);
@@ -55,6 +67,7 @@ module.exports = {
             };
             resolve(newResult);
           } else {
+            console.log(error);
             reject(new Error(error.sqlMessage));
           }
         }

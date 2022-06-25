@@ -28,15 +28,26 @@ module.exports = {
         password: hash,
       };
 
-      //must fill email
+      //must fill data
+      if (!firstName || !lastName || !noTelp) {
+        return helperWrapper.response(
+          response,
+          400,
+          "fill data corectly",
+          null
+        );
+      }
       if (!email) {
         return helperWrapper.response(response, 400, "fill email box", null);
+      }
+      if (!password) {
+        return helperWrapper.response(response, 400, "fill password box", null);
       }
 
       //email must contain @gmail.com
       const emailValid = email.split("@", 1);
-      const emailValid2 = "gmail.com";
-      if (email !== emailValid[0] + "@" + emailValid2) {
+      const emailValid2 = email.split("@", 2);
+      if (email !== `${emailValid[0]}@${emailValid2[1]}`) {
         return helperWrapper.response(
           response,
           400,
@@ -53,31 +64,23 @@ module.exports = {
           null
         );
       }
+
+      //activation code
+      const result = await authModel.register(setData);
       const setSendEmail = {
         to: email,
         subject: "Email Verification !",
-        name: firstName,
+        name: firstName + lastName,
         template: "verificationEmail.html",
+        authCode: result.id,
         buttonUrl: `localhost:3001/auth/activate/${setData.id}`,
       };
-      // const sendEmail = setSendEmail.buttonUrl;
-      // if (!setSendEmail.email) {
-      //   return helperWrapper.response(
-      //     response,
-      //     400,
-      //     "activate your account",
-      //     null
-      //   );
-      // }
       await sendMail(setSendEmail);
-      //activation code
-      const result = await authModel.register(setData);
       const dataId = result.email;
       return helperWrapper.response(
         response,
         200,
-        `succes register user , activate account to Log In your activate code is localhost:3001/auth/activate/` +
-          dataId,
+        "succes register user , activate account to Log In ",
         result
       );
     } catch (error) {
@@ -88,17 +91,31 @@ module.exports = {
   activateEmail: async (request, response) => {
     try {
       const { id } = request.params;
+      const checkResult = await authModel.getUserByUserId(id);
+      if (checkResult.length <= 0) {
+        return helperWrapper.response(
+          response,
+          404,
+          `Data by id ${id} not found`,
+          null
+        );
+      }
+
       const result = await authModel.getActivation(id);
-      console.log(result);
+
       return helperWrapper.response(
         response,
         200,
-        "your email is active",
+        "succes verify account",
         result
       );
     } catch (error) {
-      console.log(error);
-      return helperWrapper.response(response, 400, "Bad Request", null);
+      return helperWrapper.response(
+        response,
+        400,
+        "failed verify account",
+        null
+      );
     }
   },
   login: async (request, response) => {
@@ -154,11 +171,96 @@ module.exports = {
       const refreshToken = jwt.sign({ ...payload }, secretRefreshToken, {
         expiresIn: "24h",
       });
-      return helperWrapper.response(response, 200, "succes login to admin", {
+      return helperWrapper.response(response, 200, "succes login", {
         id: payload.id,
         token,
         refreshToken,
       });
+    } catch (error) {
+      console.log(error);
+      return helperWrapper.response(response, 400, "Bad Request", null);
+    }
+  },
+  forgotPassword: async (request, response) => {
+    try {
+      // pasword hash
+      const { email, linkDirect } = request.body;
+      const dataEmail = await authModel.getEmail(email);
+      if (dataEmail.length < 1) {
+        return helperWrapper.response(
+          response,
+          404,
+          "email not registed",
+          null
+        );
+      }
+      const otp = Math.floor(Math.random() * 899999 + 100000);
+
+      const setSendEmail = {
+        to: email,
+        subject: "Forgot Password Verification!",
+        template: "forgotPassword.html",
+        otpKey: otp,
+        linkENV: process.env.LINK_FRONTEND,
+        buttonUrl: otp,
+      };
+      await sendMail(setSendEmail);
+      // activation code
+      const result = await authModel.setOTP(email, otp);
+      return helperWrapper.response(
+        response,
+        200,
+        `email valid check your email box for reset password `,
+        email
+      );
+    } catch (error) {
+      console.log(error);
+      return helperWrapper.response(response, 400, "Bad Request", null);
+    }
+  },
+  resetPassword: async (request, response) => {
+    try {
+      const { keyChangePassword, newPassword, confirmPassword } = request.body;
+      const checkResult = await authModel.getOTP(keyChangePassword);
+      if (checkResult.length <= 0) {
+        return helperWrapper.response(
+          response,
+          404,
+          `your key is not valid`,
+          null
+        );
+      }
+      const id = checkResult[0].id;
+      // eslint-disable-next-line no-restricted-syntax
+      if (newPassword !== confirmPassword) {
+        return helperWrapper.response(
+          response,
+          400,
+          "password Not Match",
+          null
+        );
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(confirmPassword, salt);
+      const setData = {
+        confirmPassword: hash,
+        updatedAt: new Date(Date.now()),
+      };
+      // eslint-disable-next-line no-restricted-syntax
+      for (const data in setData) {
+        if (!setData[data]) {
+          delete setData[data];
+        }
+      }
+      const result = await authModel.updatePassword(id, hash, setData);
+
+      return helperWrapper.response(
+        response,
+        200,
+        "succes reset Password",
+        result
+      );
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);

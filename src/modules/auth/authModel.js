@@ -29,6 +29,16 @@ module.exports = {
         }
       );
     }),
+  getUserByUserId: (id) =>
+    new Promise((resolve, reject) => {
+      connection.query("SELECT * FROM user WHERE id=?", id, (error, result) => {
+        if (!error) {
+          resolve(result);
+        } else {
+          reject(new Error(error.sqlMessage));
+        }
+      });
+    }),
   getActivation: (id) =>
     new Promise((resolve, reject) => {
       connection.query(
@@ -65,6 +75,51 @@ module.exports = {
         (error, result) => {
           if (!error) {
             resolve(result);
+          } else {
+            reject(new Error(error.sqlMessage));
+          }
+        }
+      );
+    }),
+  setOTP: (email, otp) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `UPDATE user SET OTP= '${otp}' WHERE email="${email}"`,
+        (error) => {
+          if (!error) {
+            const newResult = "email active";
+            resolve(newResult);
+          } else {
+            reject(new Error(error.sqlMessage));
+          }
+        }
+      );
+    }),
+  getOTP: (keyChangePassword) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        "SELECT * FROM user WHERE OTP=?",
+        keyChangePassword,
+        (error, result) => {
+          if (!error) {
+            resolve(result);
+          } else {
+            reject(new Error(error.sqlMessage));
+          }
+        }
+      );
+    }),
+  updatePassword: (id, hash, data) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `UPDATE user SET password='${hash}',OTP=null WHERE id='${id}'`,
+        (error) => {
+          if (!error) {
+            const newResult = {
+              id,
+              ...data,
+            };
+            resolve(newResult);
           } else {
             reject(new Error(error.sqlMessage));
           }

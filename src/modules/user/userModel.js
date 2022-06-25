@@ -61,7 +61,7 @@ module.exports = {
   updatePassword: (id, hash, data) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `UPDATE user SET password='${hash}' WHERE id=${id}`,
+        `UPDATE user SET password='${hash}' WHERE id='${id}'`,
         (error) => {
           if (!error) {
             const newResult = {
@@ -75,18 +75,22 @@ module.exports = {
         }
       );
     }),
-  closeAccount: (id, data) =>
+  deleteImage: (id, data) =>
     new Promise((resolve, reject) => {
-      connection.query("DELETE FROM user WHERE id=?", id, (error) => {
-        if (!error) {
-          const newResult = {
-            id,
-            ...data,
-          };
-          resolve(newResult);
-        } else {
-          reject(new Error(error.sqlMessage));
+      connection.query(
+        `UPDATE user SET image=null WHERE id="${id}"`,
+        data,
+        (error) => {
+          if (!error) {
+            const newResult = {
+              id,
+              ...data,
+            };
+            resolve(newResult);
+          } else {
+            reject(new Error(error.sqlMessage));
+          }
         }
-      });
+      );
     }),
 };
