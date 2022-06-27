@@ -28,7 +28,7 @@ module.exports = {
     new Promise((resolve, reject) => {
       connection.query(
         `SELECT schedule.id,schedule.movieId,schedule.premiere,schedule.price,schedule.location,schedule.dateStart,schedule.dateEnd,schedule.time,schedule.createdAt,schedule.updatedAt,movie.name,movie.category,movie.cast,movie.releaseDate,movie.duration,movie.synopsis FROM schedule JOIN movie ON movie.id=schedule.movieId WHERE location LIKE '%${searchLocation}%' ${
-          searchDate ? ` AND DAY(dateStart) =${searchDate}` : ""
+          searchDate ? ` AND dateStart ='${searchDate}'` : ""
         } AND movieId = ${searchMovieId} ORDER BY ${sort} LIMIT ? OFFSET ?`,
         [limit, offset],
         (error, result) => {

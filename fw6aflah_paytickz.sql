@@ -1,2 +1,2 @@
-select * from booking
--- delete  from movie where name='gotg'
+-- select * from user
+delete  from user where email='fernandaaflah12345@gmail.com'
