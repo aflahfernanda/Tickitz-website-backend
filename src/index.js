@@ -10,7 +10,7 @@ const routerNavigation = require("./routes/index");
 const app = express();
 require("dotenv").config();
 
-const port = "3001" || process.env.PORT;
+const port = process.env.PORT || "3001";
 
 // midleware
 
