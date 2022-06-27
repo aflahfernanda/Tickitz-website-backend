@@ -3,8 +3,8 @@ require("dotenv").config();
 
 const snap = new midtransClient.Snap({
   isProduction: false,
-  serverKey: "SB-Mid-server-PrpiN41IrBAV7IZC1GOsfJlt",
-  clientKey: "SB-Mid-client-73kIWad7iD3v558R",
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
+  clientKey: process.env.MIDTRANS_CLIENT_KEY,
 });
 
 module.exports = {

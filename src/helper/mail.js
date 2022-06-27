@@ -4,11 +4,9 @@ const fs = require("fs");
 const mustache = require("mustache");
 require("dotenv").config();
 
-const clientId =
-  "669829376072-vul5lionc8p7fnbdmoudssf4um5uqscu.apps.googleusercontent.com";
-const clientSecret = "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";
-const refreshToken =
-  "1//04-cJwr1FncLkCgYIARAAGAQSNwF-L9IrFP27ThF2b4OzX1SAQBAyZQ6D2Hc063c8uk2q3zpc-d5ReSShnLiBMu2NAQmqtlBf8v8";
+const clientId = process.env.MAIL_CLIENT_ID;
+const clientSecret = process.env.MAIL_CLIENT_ID;
+const refreshToken = process.env.MAIL_REFRESH_TOKEN;
 
 const { OAuth2 } = google.auth;
 const OAuth2Client = new OAuth2(clientId, clientSecret);
