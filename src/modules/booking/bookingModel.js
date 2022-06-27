@@ -158,7 +158,7 @@ module.exports = {
   getBookingByUserId: (userId) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT user.id,user.firstName,user.lastName,user.email,booking.userId,booking.id,booking.scheduleId,booking.dateBooking,booking.timeBooking,booking.totalTicket,booking.totalPayment,booking.paymentMethod,booking.statusPayment,booking.statusUsed,booking.createdAt,booking.updateAt,schedule.id,schedule.premiere,schedule.price,schedule.movieId,schedule.location,movie.id,movie.name,movie.category FROM user JOIN booking ON user.id = booking.userId JOIN schedule ON booking.scheduleId=schedule.id JOIN movie ON schedule.movieId=movie.id WHERE booking.userId='${userId}'  `,
+        `SELECT booking.id,booking.userId,booking.scheduleId,booking.dateBooking,booking.timeBooking,booking.totalTicket,booking.totalPayment,booking.paymentMethod,booking.statusPayment,booking.statusUsed,booking.createdAt,booking.updateAt,schedule.premiere,schedule.price,schedule.movieId,schedule.location,movie.name,movie.category FROM booking JOIN schedule ON booking.scheduleId=schedule.id JOIN movie ON schedule.movieId=movie.id WHERE booking.userId='${userId}'  `,
         (error, result) => {
           if (!error) {
             resolve(result);
