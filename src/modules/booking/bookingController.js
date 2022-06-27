@@ -240,8 +240,8 @@ module.exports = {
   },
   getBookingByUserId: async (request, response) => {
     try {
-      const { id } = request.params;
-      const result = await bookingModel.getBookingByUserId(id);
+      const { userId } = request.params;
+      const result = await bookingModel.getBookingByUserId(userId);
       console.log(result);
 
       if (result.length <= 0) {
@@ -252,14 +252,7 @@ module.exports = {
           null
         );
       }
-      const seatResult = await bookingModel.getBookingByIdBookingSeat(id);
-      const newResult = { ...result, seatResult };
-      return helperWrapper.response(
-        response,
-        200,
-        "succes get data",
-        newResult
-      );
+      return helperWrapper.response(response, 200, "succes get data", result);
     } catch (error) {
       console.log(error);
       return helperWrapper.response(response, 400, "Bad Request", null);

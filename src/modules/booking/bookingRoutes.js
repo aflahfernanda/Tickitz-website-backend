@@ -13,7 +13,7 @@ Router.post(
   middlewareAuth.userAuthentication,
   bookingController.createBooking
 );
-Router.get("/:id", bookingController.getBookingByUserId);
+Router.get("/:userId", bookingController.getBookingByUserId);
 Router.get("/bookingId/:id", bookingController.getBookingByIdBooking);
 
 Router.patch("/:id", bookingController.updateStatusBooking);
