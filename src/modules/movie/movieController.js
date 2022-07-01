@@ -200,12 +200,14 @@ module.exports = {
           null
         );
       }
-      const deleteImage = resultId[0].image.split(".")[0];
 
       //delete image from cloudinary
-      cloudinary.uploader.destroy(function (result) {
-        return result;
-      });
+      if (resultId[0].image !== null) {
+        const deleteImage = resultId[0].image.split(".")[0];
+        cloudinary.uploader.destroy(deleteImage, function (result) {
+          return result;
+        });
+      }
       return helperWrapper.response(
         response,
         200,
